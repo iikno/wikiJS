@@ -7,6 +7,7 @@ import { authentication } from './authentication.ts'
 import { blocks } from './blocks.ts'
 import { blogs } from './blogs.ts'
 import { comments } from './comments.ts'
+import { credentials } from './credentials.ts'
 import { extensions } from './extensions.ts'
 import { feedback } from './feedback.ts'
 import { flags } from './flags.ts'
@@ -62,6 +63,7 @@ export default {
   blocks,
   blogs,
   comments,
+  credentials,
   extensions,
   feedback,
   flags,

@@ -224,6 +224,8 @@ async function postBoot() {
   await WIKI.models.feedback.reloadBoards()
   // -> Likewise: every page view asks whether the page takes suggestions and who reviews it
   await WIKI.models.approvals.reloadCache()
+  // -> Says so once at boot when rows are sealed under a key this instance does not hold
+  await WIKI.models.credentials.logKeyState()
 
   // -> Must follow the sites cache: every site gets a row per installed block
   await WIKI.models.blocks.refreshFromDisk()

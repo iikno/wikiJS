@@ -1270,6 +1270,14 @@ class Tree {
 
     const oldPath = childPathOf(folder)
     const newPath = childPathOf({ folderPath: folder.folderPath, fileName: name })
+    // -> Before anything moves, so that a refusal leaves nothing half-applied
+    if (folder.locale === WIKI.sites[folder.siteId]?.config?.locales?.primary) {
+      await WIKI.models.credentials.assertRelocatable(
+        folder.siteId,
+        decodeTreePath(oldPath),
+        decodeTreePath(newPath)
+      )
+    }
 
     WIKI.logger.debug(`Renaming folder ${folder.id} from ${oldPath} to ${newPath}...`)
 
@@ -1311,7 +1319,10 @@ class Tree {
       .where(eq(treeTable.id, folder.id))
       .returning()
 
-    const movedPages = await this.refreshDescendantPaths(folder.siteId, folder.locale, newPath)
+    const movedPages = await this.refreshDescendantPaths(folder.siteId, folder.locale, newPath, {
+      locale: folder.locale,
+      path: decodeTreePath(oldPath)
+    })
 
     // -> Only moved, never rewritten: none of these pages changed, so the copy a target holds is
     //    still the right contents at the wrong name
@@ -1769,6 +1780,15 @@ class Tree {
 
     const newPath = childPathOf({ folderPath: newParentPath, fileName: folder.fileName })
     const isLocaleChange = destinationLocale !== folder.locale
+    const primary = WIKI.sites[siteId]?.config?.locales?.primary
+    // -> Before anything moves, so that a refusal leaves nothing half-applied
+    if (folder.locale === primary && destinationLocale === primary) {
+      await WIKI.models.credentials.assertRelocatable(
+        siteId,
+        decodeTreePath(oldPath),
+        decodeTreePath(newPath)
+      )
+    }
 
     WIKI.logger.debug(
       `Moving folder ${folder.id} from ${folder.locale}:${oldPath} to ${destinationLocale}:${newPath}...`
@@ -1841,7 +1861,10 @@ class Tree {
       .where(eq(treeTable.id, folder.id))
       .returning()
 
-    const movedPages = await this.refreshDescendantPaths(siteId, destinationLocale, newPath)
+    const movedPages = await this.refreshDescendantPaths(siteId, destinationLocale, newPath, {
+      locale: folder.locale,
+      path: decodeTreePath(oldPath)
+    })
 
     // -> Only moved, never rewritten: none of these pages changed, so the copy a target holds is
     //    still the right contents at the wrong place
@@ -1955,13 +1978,17 @@ class Tree {
    * and every other — and a rewrite that took them all in would report another locale's pages as
    * having moved, sending a storage target to move files that never went anywhere.
    *
+   * The credentials at or under the folder follow it too (`previous` says where it was), when it stays
+   * in the site's primary locale: a credential belongs to a path of that locale and to no other.
+   *
    * @returns Where each page moved from and to, for the copies a storage target keeps of them. The
    *   old path is only knowable from here — a moment later the row no longer says where it was.
    */
   private async refreshDescendantPaths(
     siteId: string,
     locale: string,
-    path: string
+    path: string,
+    previous: { locale: string; path: string }
   ): Promise<
     { id: string; locale: string; previousPath: string; path: string; contentType: string }[]
   > {
@@ -2006,6 +2033,10 @@ class Tree {
           contentType: row.contentType ?? 'markdown'
         })
       }
+    }
+    const primary = WIKI.sites[siteId]?.config?.locales?.primary
+    if (previous.locale === primary && locale === primary) {
+      await WIKI.models.credentials.relocate(siteId, previous.path, decodeTreePath(path))
     }
     if (rows.length > 0) {
       WIKI.logger.debug(
@@ -2255,6 +2286,14 @@ class Tree {
         )
         .limit(1)
       if (held.length > 0) {
+        continue
+      }
+      // -> Not empty if it holds credentials: they belong to a path, not to a page, and an unused
+      //    folder is no reason to destroy them
+      if (
+        folder.locale === WIKI.sites[siteId]?.config?.locales?.primary &&
+        (await WIKI.models.credentials.countUnder(siteId, folder.path)) > 0
+      ) {
         continue
       }
       await this.deleteFolder(rows[0].id)

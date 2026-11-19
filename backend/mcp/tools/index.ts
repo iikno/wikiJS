@@ -6,6 +6,7 @@ import { holdsScope } from '../context.ts'
 import { effectiveMaintenance } from '../../helpers/maintenance.ts'
 import { assetTools } from './assets.ts'
 import { commentTools, suggestTools } from './contribute.ts'
+import { credentialTools } from './credentials.ts'
 import { destructiveTools } from './destructive.ts'
 import { discoverTools } from './discover.ts'
 import { editTools } from './edit.ts'
@@ -28,6 +29,7 @@ const ALL_TOOLS: McpTool[] = [
   ...suggestTools,
   ...editTools,
   ...assetTools,
+  ...credentialTools,
   ...destructiveTools
 ]
 

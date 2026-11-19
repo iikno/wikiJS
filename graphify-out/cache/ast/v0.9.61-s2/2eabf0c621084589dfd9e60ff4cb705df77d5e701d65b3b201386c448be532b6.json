@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_backend_db_migrations_20261009052750_group_global_permissions_migration_sql", "label": "migration.sql", "file_type": "code", "source_file": "backend/db/migrations/20261009052750_group-global-permissions/migration.sql", "source_location": null}], "edges": []}

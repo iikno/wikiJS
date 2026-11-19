@@ -549,7 +549,9 @@ const toolGroups = [
   { key: 'suggest', icon: 'merge-files', scopes: 'mcp:write + approvals:write' },
   { key: 'edit', icon: 'pen', scopes: 'mcp:write + pages:write' },
   { key: 'assets', icon: 'add-image', scopes: 'mcp:* + assets:*' },
-  { key: 'destructive', icon: 'trash', scopes: 'mcp:write + pages:write' }
+  { key: 'credentials', icon: 'key', scopes: 'mcp:* + credentials:*' },
+  { key: 'credentials-reveal', icon: 'password', scopes: 'mcp:read + credentials:read' },
+  { key: 'destructive', icon: 'trash', scopes: 'mcp:write + pages:write / credentials:write' }
 ]
 
 const state = reactive({

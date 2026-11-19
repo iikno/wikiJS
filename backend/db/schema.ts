@@ -2099,3 +2099,85 @@ export const userNotificationPrefs = pgTable(
       .where(sql`"enabled"`)
   ]
 )
+
+// CREDENTIALS -------------------------
+/**
+ * The shapes a credential is built from: a named list of fields, per site. See
+ * `dev/specs/credentials.md` §5.1.
+ */
+export const credentialTemplates = pgTable(
+  'credentialTemplates',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    siteId: uuid()
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    /** A slug, unique per site: how storage files and MCP name a template. */
+    key: varchar({ length: 64 }).notNull(),
+    name: varchar({ length: 255 }).notNull(),
+    icon: varchar({ length: 255 }),
+    /** `[{ id, label, type, required, hint }]`, in display order. */
+    fields: jsonb().notNull().default([]),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp().notNull().defaultNow()
+  },
+  (table) => [uniqueIndex('credentialTemplates_siteId_key_key').on(table.siteId, table.key)]
+)
+
+/**
+ * A record attached to a folder path, whose secret fields live encrypted in `secrets`. See
+ * `dev/specs/credentials.md` §5.2 and `helpers/credentialCrypto.ts`.
+ */
+export const credentials = pgTable(
+  'credentials',
+  {
+    // -> Part of the AAD of `secrets`, and written to the storage file, so it is the same on every
+    //    instance
+    id: uuid().primaryKey().defaultRandom(),
+    siteId: uuid()
+      .notNull()
+      .references(() => sites.id, { onDelete: 'cascade' }),
+    // -> As `pages.path`. Moved by `tree.refreshDescendantPaths`
+    path: varchar({ length: 255 }).notNull(),
+    /** A slug, unique within a path: the handle an upsert finds a credential by. */
+    key: varchar({ length: 128 }).notNull(),
+    templateId: uuid()
+      .notNull()
+      .references(() => credentialTemplates.id, { onDelete: 'restrict' }),
+    name: varchar({ length: 255 }).notNull(),
+    tags: text()
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    /** `{ fieldId: value }` for the fields that are not secret. */
+    fields: jsonb().notNull().default({}),
+    /** The sealed blob of `{ fieldId: value }` for the secret fields. Null when none holds a value. */
+    secrets: bytea(),
+    /** Which secret fields hold a value, so that a listing can say "set" without decrypting. */
+    secretFields: text()
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    /** The key id of `secrets`, in hex. Null exactly when `secrets` is. */
+    keyId: varchar({ length: 16 }),
+    // -> Never built from a secret
+    ts: tsvector('ts'),
+    createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    updatedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp().notNull().defaultNow(),
+    updatedAt: timestamp().notNull().defaultNow(),
+    /** Moves only when a secret value changes. */
+    secretsUpdatedAt: timestamp()
+  },
+  (table) => [
+    uniqueIndex('credentials_siteId_path_key_key').on(table.siteId, table.path, table.key),
+    index('credentials_templateId_idx').on(table.templateId),
+    index('credentials_ts_idx').using('gin', table.ts),
+    check('credentials_keyId_check', sql`(${table.secrets} IS NULL) = (${table.keyId} IS NULL)`),
+    // -> So that a code path that forgets to seal fails loudly
+    check(
+      'credentials_secrets_check',
+      sql`${table.secrets} IS NULL OR substring(${table.secrets} FROM 1 FOR 4) = 'WKC1'::bytea`
+    )
+  ]
+)

@@ -185,6 +185,12 @@ defaults:
         suggest: true
         edit: true
         assets: false
+        # Credentials: listing, searching and writing them is on, since a token's `credentials` scope
+        # and the account's page permissions are what limit it, and a secret can be written without
+        # being read back. Revealing one puts its value in the model's context, so it is an
+        # instance-wide decision on top of the per-account permission: off by default.
+        credentials: true
+        credentials-reveal: false
         destructive: false
       # The publish state of a page an agent creates: `published` or `draft`. Published, because a
       # draft is visible only to those who may edit it, so no reader -- and no other agent -- would

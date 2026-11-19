@@ -54,6 +54,10 @@ The wiki as a Model Context Protocol server at `/_mcp`, so that an AI assistant 
   refuses them on `/_api`, except on a `callApi` replay of the same key — `replayedKeyId`, an
   async-local scope no outside request can claim), and a reused refresh token revokes the grant. It
   all exists only while MCP, the API and personal tokens are on.
+- **Credentials are the exception to calling the REST route in-process**: `mcp/tools/credentials.ts`
+  calls `models/credentials.ts`, which holds the rules, and shares the route's audit and rate-limit
+  helpers. Their reveal tool lives in its own group, `credentials-reveal`, off by default — see
+  [Credentials](credentials.md).
 - **Written by hand, no MCP SDK.** Arguments are checked by Ajv against the schema `tools/list`
   publishes. The rate limit is an in-memory token bucket per instance (`helpers/tokenBucket.ts`), on
   purpose: agents fan out, and a database write per call would be the load it exists to stop.

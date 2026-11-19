@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify'
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { TREE_ORDER_BY, type TreeItemType, type TreeOrderBy, type TreeRow } from '../models/tree.ts'
 import { audit } from '../helpers/audit.ts'
 import { requestUserId } from '../helpers/requester.ts'
@@ -176,6 +176,36 @@ function mayOnFolder(req: SiteRequest, permission: string, path: string, locale:
     path,
     locale
   })
+}
+
+/**
+ * Whether the caller may carry the credentials under a folder along when it is renamed, moved or
+ * deleted: `manage:credentials` at the folder, so that somebody who cannot see them cannot take them
+ * elsewhere or destroy them. Credentials belong to the site's primary locale, so a folder of another
+ * one holds none.
+ *
+ * @returns Whether the handler may go on; when not, the reply has been sent (409, with the count)
+ */
+async function guardCredentials(
+  req: SiteRequest,
+  reply: FastifyReply,
+  folder: { locale: string },
+  path: string
+): Promise<boolean> {
+  if (folder.locale !== WIKI.sites[req.params.siteId]?.config?.locales?.primary) {
+    return true
+  }
+  const count = await WIKI.models.credentials.countUnder(req.params.siteId, path)
+  if (
+    count > 0 &&
+    !(requestUserId(req) && mayOnFolder(req, 'manage:credentials', path, folder.locale))
+  ) {
+    reply.conflict(
+      `This folder holds ${count} credential(s), and you need to manage credentials here to move or delete them.`
+    )
+    return false
+  }
+  return true
 }
 
 /** What is being done to a whole branch, which decides what each entry under it is asked for. */
@@ -894,6 +924,12 @@ async function routes(app: FastifyInstance) {
           )
         }
       }
+      if (
+        name !== existing.fileName &&
+        !(await guardCredentials(req, reply, existing, existingPath))
+      ) {
+        return
+      }
       const folder = await WIKI.models.tree.renameFolder({
         folderId: req.params.folderId,
         pathName: req.body.pathName,
@@ -1013,6 +1049,9 @@ async function routes(app: FastifyInstance) {
         return reply.forbidden(
           'You are not allowed to move this folder there: you may not move everything it contains.'
         )
+      }
+      if (isMoving && !(await guardCredentials(req, reply, existing, folderPathOf(existing)))) {
+        return
       }
       const folder = await WIKI.models.tree.moveFolder({
         folderId: req.params.folderId,
@@ -1288,7 +1327,15 @@ async function routes(app: FastifyInstance) {
           'You are not allowed to delete this folder: you may not delete everything it contains.'
         )
       }
+      if (!(await guardCredentials(req, reply, existing, folderPathOf(existing)))) {
+        return
+      }
       const removed = await WIKI.models.tree.deleteFolder(req.params.folderId)
+      // -> Here and not in the model: an empty-folder purge also deletes folders, and must not take
+      //    credentials with them. `guardCredentials` has asked for `manage:credentials` above.
+      if (existing.locale === WIKI.sites[req.params.siteId]?.config?.locales?.primary) {
+        await WIKI.models.credentials.deleteUnder(req.params.siteId, folderPathOf(existing))
+      }
       // -> The tree entries are gone; these are the rows behind them, which is where a page and an
       //    asset actually live
       await WIKI.models.pages.deleteOrphaned(req.params.siteId, removed.pages, actor)

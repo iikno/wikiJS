@@ -31,6 +31,7 @@ export const TOKEN_SCOPE_CATEGORIES = [
   'assets',
   'comments',
   'glossary',
+  'credentials',
   'navigation',
   'approvals',
   'profile',

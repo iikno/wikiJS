@@ -14,6 +14,7 @@ export const AUDIT_KINDS = [
   'asset',
   'comment',
   'glossary',
+  'credential',
   'auth',
   'profile',
   'admin'
@@ -77,6 +78,17 @@ export const AUDIT_ACTIONS = {
     'deleteAnnotation'
   ],
   glossary: ['createGlossaryTerm', 'updateGlossaryTerm', 'deleteGlossaryTerm'],
+  credential: [
+    'createCredential',
+    'updateCredential',
+    'moveCredential',
+    'deleteCredential',
+    'revealCredential',
+    'createCredentialTemplate',
+    'updateCredentialTemplate',
+    'deleteCredentialTemplate',
+    'importCredentials'
+  ],
   auth: [
     'login',
     'logout',

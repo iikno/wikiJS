@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_backend_db_migrations_20261115042559_empty_locale_entries_migration_sql", "label": "migration.sql", "file_type": "code", "source_file": "backend/db/migrations/20261115042559_empty-locale-entries/migration.sql", "source_location": null}], "edges": []}

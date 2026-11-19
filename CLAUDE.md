@@ -65,7 +65,7 @@ before working in an area — and add to it there, not here:
   `frontend/CLAUDE.md` (layout, frontend patterns) and `blocks/CLAUDE.md` (layout, shadow DOM and
   dark mode), each loaded when a file under that directory is read.
 - **Per subsystem** — `.claude/rules/*.md`, each loaded when a file matching its `paths:` is read:
-  `storage` (storage targets, delivery, the git sync), `comments`, `app-shell-seo`,
+  `storage` (storage targets, delivery, the git sync), `comments`, `credentials` (encrypted credentials on folder paths), `app-shell-seo`,
   `distributing-blocks` (the `.wkblock` package), `emails`, `excalidraw`, `analytics`,
   `live-notes`, `audit-log`, `notifications`, `mcp`, `page-lifecycle`, `glossary`,
   `feedback-boards`, `metrics`, `icons`, `page-paths` (path segments, the ltree encoding),
@@ -367,3 +367,13 @@ Consequences worth knowing:
   simply never matches: `can('browse:fileman')` and friends silently hid the controls they guarded.
   Adding a genuinely new global permission is allowed but is the maintainer's decision — ask first,
   as above; never introduce one on your own.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

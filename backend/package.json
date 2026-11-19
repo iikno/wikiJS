@@ -28,6 +28,7 @@
     "start": "cd .. && node --no-experimental-webstorage backend",
     "dev": "cd .. && nodemon --no-experimental-webstorage backend --watch backend --ext js,ts,json",
     "cli": "node --no-experimental-webstorage cli.ts",
+    "test": "node --no-experimental-webstorage --test helpers/credentialCrypto.test.ts",
     "typecheck": "tsc",
     "typecheck:watch": "tsc --watch",
     "ncu": "ncu -i",

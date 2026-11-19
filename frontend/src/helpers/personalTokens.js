@@ -11,6 +11,7 @@ export const TOKEN_SCOPE_CATEGORIES = [
   { key: 'assets', icon: 'la:image' },
   { key: 'comments', icon: 'la:comments' },
   { key: 'glossary', icon: 'la:book' },
+  { key: 'credentials', icon: 'la:key' },
   { key: 'navigation', icon: 'la:sitemap' },
   { key: 'approvals', icon: 'la:check-double' },
   { key: 'profile', icon: 'la:user-circle' },

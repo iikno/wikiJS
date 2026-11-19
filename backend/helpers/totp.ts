@@ -166,3 +166,23 @@ export function verifyTotpCode(secret: string, code: string): boolean {
   }
   return matched
 }
+
+/**
+ * The code a stored secret produces right now, and how many seconds it stays current.
+ *
+ * What a credential reveals for a TOTP field, so that the seed never leaves the server.
+ *
+ * @param secret Base32 secret
+ * @throws If the secret will not decode
+ */
+export function currentTotpCode(secret: string): { code: string; expiresIn: number } {
+  const secretKey = base32Decode(secret)
+  if (secretKey.length < 1) {
+    throw new Error('Empty TOTP secret')
+  }
+  const seconds = Math.floor(Date.now() / 1000)
+  return {
+    code: codeAt(secretKey, Math.floor(seconds / periodSeconds)),
+    expiresIn: periodSeconds - (seconds % periodSeconds)
+  }
+}

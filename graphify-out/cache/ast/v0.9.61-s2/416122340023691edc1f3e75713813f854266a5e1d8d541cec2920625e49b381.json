@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_backend_db_migrations_20261114090330_cookie_consent_migration_sql", "label": "migration.sql", "file_type": "code", "source_file": "backend/db/migrations/20261114090330_cookie-consent/migration.sql", "source_location": null}], "edges": []}

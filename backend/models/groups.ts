@@ -134,7 +134,10 @@ export const PAGE_PERMISSIONS = [
   'manage:glossary',
   'read:notes',
   'write:notes',
-  'write:feedback'
+  'write:feedback',
+  'read:credentials',
+  'reveal:credentials',
+  'manage:credentials'
 ]
 
 /**
@@ -155,6 +158,16 @@ export const LOCALE_PERMISSIONS = ['read:glossary', 'manage:glossary', 'read:not
 const IMPLIED_LOCALE_PERMISSIONS: Record<string, string> = {
   'read:glossary': 'manage:glossary',
   'read:notes': 'write:notes'
+}
+
+/**
+ * The page permissions that come with another at the same path: asking for the first is also answered
+ * yes when a rule grants one of the others. Managing or revealing a credential one may not see is not
+ * a state worth supporting. Managing does NOT imply revealing: an account may write a secret it can
+ * never read back, which is what an agent needs.
+ */
+const IMPLIED_PAGE_PERMISSIONS: Record<string, string[]> = {
+  'read:credentials': ['manage:credentials', 'reveal:credentials']
 }
 
 /** Whether a permission list carries any of `ELEVATED_PERMISSIONS`. */
@@ -428,8 +441,12 @@ class Groups {
       idea.
     */
     const ref = WIKI.models.feedback.ruleRefFor(page)
-    const rule = resolvePageRule(this.rulesForGroups(actor.groupIds), permission, ref)
-    return rule ? rule.mode !== 'DENY' : false
+    const rules = this.rulesForGroups(actor.groupIds)
+    const grants = (name: string) => {
+      const rule = resolvePageRule(rules, name, ref)
+      return rule ? rule.mode !== 'DENY' : false
+    }
+    return grants(permission) || (IMPLIED_PAGE_PERMISSIONS[permission] ?? []).some(grants)
   }
 
   /**

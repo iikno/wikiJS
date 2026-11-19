@@ -1196,6 +1196,35 @@ const rules = [
     disabled: false
   },
   /*
+    Credentials are asked at the credential's own path, in the site's primary locale. Never offered
+    to the guests group (not in `GUEST_ROLES`): every act on one is attributable to somebody. Managing
+    does not imply revealing.
+  */
+  {
+    permission: 'read:credentials',
+    title: 'admin.groups.pagePermission.readCredentials',
+    hint: 'admin.groups.pagePermission.readCredentialsHint',
+    warning: false,
+    restrictedForSystem: false,
+    disabled: false
+  },
+  {
+    permission: 'reveal:credentials',
+    title: 'admin.groups.pagePermission.revealCredentials',
+    hint: 'admin.groups.pagePermission.revealCredentialsHint',
+    warning: false,
+    restrictedForSystem: true,
+    disabled: false
+  },
+  {
+    permission: 'manage:credentials',
+    title: 'admin.groups.pagePermission.manageCredentials',
+    hint: 'admin.groups.pagePermission.manageCredentialsHint',
+    warning: false,
+    restrictedForSystem: true,
+    disabled: false
+  },
+  /*
     The rule permissions that ignore the path: a glossary belongs to a site and a locale, and a live
     note to a site (asked in its primary locale), so every rule naming one that is scoped to them
     applies, and mode alone decides -- see `resolveLocaleRule` in `helpers/pageRules.ts`. The heading
